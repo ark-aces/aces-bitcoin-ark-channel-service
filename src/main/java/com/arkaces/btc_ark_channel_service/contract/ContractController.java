@@ -8,10 +8,11 @@ import com.arkaces.aces_server.aces_service.contract.CreateContractRequest;
 import com.arkaces.aces_server.aces_service.error.ServiceErrorCodes;
 import com.arkaces.aces_server.common.error.NotFoundException;
 import com.arkaces.aces_server.common.identifer.IdentifierGenerator;
-import com.arkaces.btc_ark_channel_service.bitcoin_rpc.BitcoinService;
 import io.swagger.client.model.Subscription;
 import io.swagger.client.model.SubscriptionRequest;
 import lombok.RequiredArgsConstructor;
+import org.bitcoinj.core.ECKey;
+import org.spongycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -27,7 +28,7 @@ public class ContractController {
     private final ContractRepository contractRepository;
     private final ContractMapper contractMapper;
     private final AcesListenerApi bitcoinListener;
-    private final BitcoinService bitcoinService;
+    private final String bitcoinEventCallbackUrl;
     
     @PostMapping("/contracts")
     public Contract<Results> postContract(@RequestBody CreateContractRequest<Arguments> createContractRequest) {
@@ -38,17 +39,17 @@ public class ContractController {
         contractEntity.setStatus(ContractStatus.EXECUTED);
         
         // generate bitcoin wallet for deposits
-        String depositBitcoinAddress = bitcoinService.getNewAddress();
-        contractEntity.setDepositBtcAddress(depositBitcoinAddress);
+        ECKey key = new ECKey();
+        String depositBtcAddress = Hex.toHexString(key.getPubKeyHash());
+        contractEntity.setDepositBtcAddress(depositBtcAddress);
+        String depositBtcPrivateKey = Hex.toHexString(key.getPrivKeyBytes());
+        contractEntity.setDepositBtcPassphrase(depositBtcPrivateKey);
 
-        String addressPrivateKey = bitcoinService.getPrivateKey(depositBitcoinAddress);
-        contractEntity.setDepositBtcPassphrase(addressPrivateKey);
-        
         // subscribe to bitcoin listener on deposit bitcoin address
         SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
-        subscriptionRequest.setCallbackUrl(depositBitcoinAddress);
+        subscriptionRequest.setCallbackUrl(bitcoinEventCallbackUrl);
         subscriptionRequest.setMinConfirmations(2);
-        subscriptionRequest.setRecipientAddress(depositBitcoinAddress);
+        subscriptionRequest.setRecipientAddress(depositBtcAddress);
         Subscription subscription;
         try {
             subscription = bitcoinListener.subscriptionsPost(subscriptionRequest);

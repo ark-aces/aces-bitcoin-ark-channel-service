@@ -18,6 +18,11 @@ curl http://localhost:9190/
   "instructions" : "After this contract is executed, any BTC sent to depositBtcAddress will be exchanged for ARK and  sent directly to the given recipientArkAddress less service fees.\n",
   "flatFee" : "0",
   "percentFee" : "1.00%",
+  "capacities": [{
+    "value": "50.00",
+    "unit": "BTC",
+    "displayValue": "50 BTC"
+  }],
   "inputSchema" : {
     "type" : "object",
     "properties" : {

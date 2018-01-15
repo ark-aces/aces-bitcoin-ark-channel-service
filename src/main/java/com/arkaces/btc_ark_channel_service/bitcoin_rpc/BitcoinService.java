@@ -14,6 +14,7 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +29,19 @@ public class BitcoinService {
     private final BitcoinRpcRequestFactory bitcoinRpcRequestFactory = new BitcoinRpcRequestFactory();
 
     private final NiceObjectMapper objectMapper = new NiceObjectMapper(new ObjectMapper());
+
+    public String sendTransaction(String recipientAddress, BigDecimal amount) {
+        HttpEntity<String> blockHashRequestEntity = getRequestEntity("sendtoaddress", new ArrayList<>());
+        return bitcoinRpcRestTemplate
+                .exchange(
+                        "/",
+                        HttpMethod.POST,
+                        blockHashRequestEntity,
+                        new ParameterizedTypeReference<BitcoinRpcResponse<String>>() {}
+                )
+                .getBody()
+                .getResult();
+    }
 
     public String getNewAddress() {
         HttpEntity<String> blockHashRequestEntity = getRequestEntity("getnewaddress", new ArrayList<>());

@@ -2,6 +2,7 @@ package com.arkaces.btc_ark_channel_service.transfer;
 
 import ark_java_client.ArkClient;
 import com.arkaces.aces_server.common.identifer.IdentifierGenerator;
+import com.arkaces.btc_ark_channel_service.Constants;
 import com.arkaces.btc_ark_channel_service.FeeSettings;
 import com.arkaces.btc_ark_channel_service.ServiceArkAccountSettings;
 import com.arkaces.btc_ark_channel_service.ark.ArkSatoshiService;
@@ -9,7 +10,6 @@ import com.arkaces.btc_ark_channel_service.bitcoin_rpc.BitcoinService;
 import com.arkaces.btc_ark_channel_service.contract.ContractEntity;
 import com.arkaces.btc_ark_channel_service.contract.ContractRepository;
 import com.arkaces.btc_ark_channel_service.exchange_rate.ExchangeRateService;
-import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,26 +25,26 @@ import java.time.LocalDateTime;
 @RestController
 @Slf4j
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
-public class BitcoinEventHandler {
+public class BitcoinTransactionEventHandler {
 
     private final ContractRepository contractRepository;
     private final TransferRepository transferRepository;
-    private final BitcoinService bitcoinService;
     private final IdentifierGenerator identifierGenerator;
     private final ExchangeRateService exchangeRateService;
     private final ArkClient arkClient;
     private final ArkSatoshiService arkSatoshiService;
     private final ServiceArkAccountSettings serviceArkAccountSettings;
     private final FeeSettings feeSettings;
+    private final BitcoinService bitcoinService;
 
     @PostMapping("/bitcoinEvents")
-    public ResponseEntity<Void> handleBitcoinEvent(@RequestBody JsonNode event) {
+    public ResponseEntity<Void> handleBitcoinEvent(@RequestBody BitcoinTransactionEventPayload eventPayload) {
         // todo: verify event post is signed by listener
-        String btcTransactionId = event.get("transactionId").toString();
+        String btcTransactionId = eventPayload.getTransactionId();
         
-        log.info("Received Bitcoin event: " + btcTransactionId + " -> " + event.get("data"));
+        log.info("Received Bitcoin event: " + btcTransactionId + " -> " + eventPayload.getData());
         
-        String subscriptionId = event.get("subscriptionId").asText();
+        String subscriptionId = eventPayload.getSubscriptionId();
         ContractEntity contractEntity = contractRepository.findOneBySubscriptionId(subscriptionId);
         if (contractEntity != null) {
             // todo: lock contract for update to prevent concurrent processing of a listener transaction.
@@ -62,45 +62,69 @@ public class BitcoinEventHandler {
             transferEntity.setContractEntity(contractEntity);
 
             // Get BTC amount from transaction
-            JsonNode transaction = bitcoinService.getTransaction(btcTransactionId);
-            BigDecimal btcAmount = transaction.get("amount").decimalValue();
-            BigDecimal btcFee = transaction.get("fee").decimalValue(); // todo: is this fee included in amount?
-            transferEntity.setBtcAmount(btcAmount);
+            BitcoinTransaction bitcoinTransaction = eventPayload.getData();
+
+            BigDecimal incomingBtcAmount = BigDecimal.ZERO;
+            for (BitcoinTransaction.Vout vout : bitcoinTransaction.getVout()) {
+                for (String address : vout.getScriptPubKey().getAddresses()) {
+                    if (address.equals(contractEntity.getDepositBtcAddress())) {
+                        incomingBtcAmount = incomingBtcAmount.add(vout.getValue());
+                    }
+                }
+            }
+            transferEntity.setBtcAmount(incomingBtcAmount);
 
             BigDecimal btcToArkRate = exchangeRateService.getRate("BTC", "ARK"); //2027.58, Ark 8, Btc 15000
             transferEntity.setBtcToArkRate(btcToArkRate);
 
-            // Set fees
+            // Deduct fees
             transferEntity.setBtcFlatFee(feeSettings.getBtcFlatFee());
             transferEntity.setBtcPercentFee(feeSettings.getBtcPercentFee());
 
             BigDecimal percentFee = feeSettings.getBtcPercentFee()
                     .divide(new BigDecimal("100.00"), 8, BigDecimal.ROUND_HALF_UP);
-            BigDecimal btcTotalFeeAmount = btcAmount.multiply(percentFee).add(feeSettings.getBtcFlatFee());
+            BigDecimal btcTotalFeeAmount = incomingBtcAmount.multiply(percentFee).add(feeSettings.getBtcFlatFee());
             transferEntity.setBtcTotalFee(btcTotalFeeAmount);
 
             // Calculate send ark amount
-            BigDecimal arkSendAmount = BigDecimal.ZERO;
-            if (btcAmount.compareTo(btcTotalFeeAmount) > 0) {
-                arkSendAmount = btcAmount.multiply(btcToArkRate).setScale(8, RoundingMode.HALF_DOWN);
+            BigDecimal btcSendAmount = incomingBtcAmount.subtract(btcTotalFeeAmount);
+            BigDecimal arkSendAmount = btcSendAmount.multiply(btcToArkRate).setScale(8, RoundingMode.HALF_DOWN);
+            if (btcSendAmount.compareTo(Constants.ARK_TRANSACTION_FEE) <= 0) {
+                arkSendAmount = BigDecimal.ZERO;
             }
             transferEntity.setArkSendAmount(arkSendAmount);
 
             transferEntity.setStatus(TransferStatus.NEW);
             transferRepository.save(transferEntity);
 
-            // Send ark transaction
-            Long arkSendSatoshis = arkSatoshiService.toSatoshi(arkSendAmount);
-            String arkTransactionId = arkClient.broadcastTransaction(
-                contractEntity.getRecipientArkAddress(),
-                arkSendSatoshis,
-                null,
-                serviceArkAccountSettings.getPassphrase()
+            // Check that service has enough ark to send
+            BigDecimal serviceAvailableArk = new BigDecimal(
+                    arkClient.getBalance(serviceArkAccountSettings.getAddress())
+                        .getBalance()
             );
-            transferEntity.setArkTransactionId(arkTransactionId);
 
-            log.info("Sent " + arkSendAmount + " ark to " + contractEntity.getRecipientArkAddress()
-                + ", ark transaction id " + arkTransactionId + ", btc transaction " + btcTransactionId);
+            // Send ark transaction
+            if (arkSendAmount.compareTo(BigDecimal.ZERO) > 0) {
+                if (arkSendAmount.add(Constants.ARK_TRANSACTION_FEE).compareTo(serviceAvailableArk) <= 0) {
+                    Long arkSendSatoshis = arkSatoshiService.toSatoshi(arkSendAmount);
+                    String arkTransactionId = arkClient.broadcastTransaction(
+                            contractEntity.getRecipientArkAddress(),
+                            arkSendSatoshis,
+                            null,
+                            serviceArkAccountSettings.getPassphrase()
+                    );
+                    transferEntity.setArkTransactionId(arkTransactionId);
+
+                    log.info("Sent " + arkSendAmount + " ark to " + contractEntity.getRecipientArkAddress()
+                            + ", ark transaction id " + arkTransactionId + ", btc transaction " + btcTransactionId);
+
+                    // todo: asynchronously confirm transaction, if transaction fails to confirm we should return btc amount
+                } else {
+                    // Insufficient service ark to send, we need to return the btc
+                    // todo: we should automatically send return btc transaction in an async worker
+                    transferEntity.setStatus(TransferStatus.FAILED);
+                }
+            }
 
             transferEntity.setStatus(TransferStatus.COMPLETE);
             transferRepository.save(transferEntity);

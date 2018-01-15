@@ -42,5 +42,9 @@ public class ApplicationConfig {
         return new AcesListenerApi(apiClient);
     }
 
+    @Bean
+    public String bitcoinEventCallbackUrl(Environment environment) {
+        return environment.getProperty("bitcoinEventCallbackUrl");
+    }
 
 }

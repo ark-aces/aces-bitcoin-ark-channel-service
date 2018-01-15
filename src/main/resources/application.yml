@@ -8,6 +8,11 @@ serverInfo:
   websiteUrl: "https://arkaces.com"
   flatFee: "0"
   percentFee: "1.00%"
+  capacities:
+    -
+      value: "5000.00"
+      unit: "ARK"
+      displayValue: "5000 ARK"
   inputSchema: >
     {
       "type": "object",
@@ -98,5 +103,6 @@ server:
   port: 9190
   
 bitcoinListener:
-  url: https://btc-listener-mainnet.arkaces.com/
-  apiKey: change-me
+  url: http://localhost:9090
+
+bitcoinEventCallbackUrl: http://localhost:9190/
