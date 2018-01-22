@@ -1,6 +1,7 @@
 package com.arkaces.btc_ark_channel_service.transfer;
 
 import ark_java_client.ArkClient;
+import com.arkaces.aces_server.aces_service.contract.ContractStatus;
 import com.arkaces.aces_server.common.identifer.IdentifierGenerator;
 import com.arkaces.btc_ark_channel_service.Constants;
 import com.arkaces.btc_ark_channel_service.FeeSettings;
@@ -50,6 +51,11 @@ public class BitcoinTransactionEventHandler {
             // todo: lock contract for update to prevent concurrent processing of a listener transaction.
             // Listeners send events serially, so that shouldn't be an issue, but we might want to lock
             // to be safe.
+
+            if (! contractEntity.getStatus().equals(ContractStatus.NEW)) {
+                log.info("Contract " + contractEntity.getId() + " already processed");
+                return ResponseEntity.ok().build();
+            }
 
             log.info("Matched event for contract id " + contractEntity.getId() + " btc transaction id " + btcTransactionId);
 
