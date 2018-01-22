@@ -65,7 +65,7 @@ public class BitcoinTransactionEventHandler {
             BitcoinTransaction bitcoinTransaction = eventPayload.getData();
 
             BigDecimal incomingBtcAmount = BigDecimal.ZERO;
-            for (BitcoinTransaction.Vout vout : bitcoinTransaction.getVout()) {
+            for (BitcoinTransactionVout vout : bitcoinTransaction.getVout()) {
                 for (String address : vout.getScriptPubKey().getAddresses()) {
                     if (address.equals(contractEntity.getDepositBtcAddress())) {
                         incomingBtcAmount = incomingBtcAmount.add(vout.getValue());
@@ -89,7 +89,7 @@ public class BitcoinTransactionEventHandler {
             // Calculate send ark amount
             BigDecimal btcSendAmount = incomingBtcAmount.subtract(btcTotalFeeAmount);
             BigDecimal arkSendAmount = btcSendAmount.multiply(btcToArkRate).setScale(8, RoundingMode.HALF_DOWN);
-            if (btcSendAmount.compareTo(Constants.ARK_TRANSACTION_FEE) <= 0) {
+            if (arkSendAmount.compareTo(Constants.ARK_TRANSACTION_FEE) <= 0) {
                 arkSendAmount = BigDecimal.ZERO;
             }
             transferEntity.setArkSendAmount(arkSendAmount);
@@ -98,10 +98,10 @@ public class BitcoinTransactionEventHandler {
             transferRepository.save(transferEntity);
 
             // Check that service has enough ark to send
-            BigDecimal serviceAvailableArk = new BigDecimal(
+            BigDecimal serviceAvailableArk = arkSatoshiService.toArk(Long.parseLong(
                     arkClient.getBalance(serviceArkAccountSettings.getAddress())
                         .getBalance()
-            );
+            ));
 
             // Send ark transaction
             if (arkSendAmount.compareTo(BigDecimal.ZERO) > 0) {
@@ -119,10 +119,13 @@ public class BitcoinTransactionEventHandler {
                             + ", ark transaction id " + arkTransactionId + ", btc transaction " + btcTransactionId);
 
                     // todo: asynchronously confirm transaction, if transaction fails to confirm we should return btc amount
+                    transferEntity.setNeedsArkConfirmation(true);
                 } else {
                     // Insufficient service ark to send, we need to return the btc
-                    // todo: we should automatically send return btc transaction in an async worker
                     transferEntity.setStatus(TransferStatus.FAILED);
+
+                    // todo: we should automatically send return btc transaction in an async worker
+                    transferEntity.setNeedsBtcReturn(true);
                 }
             }
 

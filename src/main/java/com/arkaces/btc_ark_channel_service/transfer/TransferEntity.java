@@ -41,6 +41,14 @@ public class TransferEntity {
 
     private String arkTransactionId;
 
+    private Boolean needsArkConfirmation;
+
+    private String arkConfirmationSubscriptionId;
+
+    private Boolean needsBtcReturn;
+
+    private String returnBtcTransactionId;
+
     @ManyToOne(cascade = CascadeType.ALL)
     private ContractEntity contractEntity;
 }

@@ -8,11 +8,11 @@ import com.arkaces.aces_server.aces_service.contract.CreateContractRequest;
 import com.arkaces.aces_server.aces_service.error.ServiceErrorCodes;
 import com.arkaces.aces_server.common.error.NotFoundException;
 import com.arkaces.aces_server.common.identifer.IdentifierGenerator;
+import com.arkaces.btc_ark_channel_service.bitcoin_rpc.BitcoinService;
 import io.swagger.client.model.Subscription;
 import io.swagger.client.model.SubscriptionRequest;
 import lombok.RequiredArgsConstructor;
-import org.bitcoinj.core.ECKey;
-import org.spongycastle.util.encoders.Hex;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 @RestController
 @Transactional
 @RequiredArgsConstructor(onConstructor = @__(@Autowired))
+@Slf4j
 public class ContractController {
     
     private final IdentifierGenerator identifierGenerator;
@@ -29,30 +30,30 @@ public class ContractController {
     private final ContractMapper contractMapper;
     private final AcesListenerApi bitcoinListener;
     private final String bitcoinEventCallbackUrl;
+    private final BitcoinService bitcoinService;
     
     @PostMapping("/contracts")
     public Contract<Results> postContract(@RequestBody CreateContractRequest<Arguments> createContractRequest) {
         ContractEntity contractEntity = new ContractEntity();
         contractEntity.setCorrelationId(createContractRequest.getCorrelationId());
+        contractEntity.setRecipientArkAddress(createContractRequest.getArguments().getRecipientArkAddress());
         contractEntity.setCreatedAt(LocalDateTime.now());
         contractEntity.setId(identifierGenerator.generate());
         contractEntity.setStatus(ContractStatus.EXECUTED);
         
         // generate bitcoin wallet for deposits
-        ECKey key = new ECKey();
-        String depositBtcAddress = Hex.toHexString(key.getPubKeyHash());
+        String depositBtcAddress = bitcoinService.getNewAddress();
         contractEntity.setDepositBtcAddress(depositBtcAddress);
-        String depositBtcPrivateKey = Hex.toHexString(key.getPrivKeyBytes());
-        contractEntity.setDepositBtcPassphrase(depositBtcPrivateKey);
 
         // subscribe to bitcoin listener on deposit bitcoin address
         SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
         subscriptionRequest.setCallbackUrl(bitcoinEventCallbackUrl);
-        subscriptionRequest.setMinConfirmations(2);
+        subscriptionRequest.setMinConfirmations(0);
         subscriptionRequest.setRecipientAddress(depositBtcAddress);
         Subscription subscription;
         try {
             subscription = bitcoinListener.subscriptionsPost(subscriptionRequest);
+            log.info("subscription: " + subscription.toString());
         } catch (ApiException e) {
             throw new RuntimeException("Bitcoin Listener subscription failed to POST", e);
         }

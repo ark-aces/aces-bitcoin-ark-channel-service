@@ -2,27 +2,12 @@ package com.arkaces.btc_ark_channel_service.transfer;
 
 import lombok.Data;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 @Data
 public class BitcoinTransaction {
     private String txid;
-    private List<Vout> vout;
-
-    @Data
-    public class Vout {
-        private BigDecimal value;
-        private Integer vout;
-        private ScriptPubKey scriptPubKey;
-    }
-
-    @Data
-    public class ScriptPubKey {
-        private String type;
-        private List<String> addresses;
-    }
-
+    private List<BitcoinTransactionVout> vout;
 }
 
 /*

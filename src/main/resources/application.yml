@@ -73,7 +73,7 @@ serverInfo:
 #    driver-class-name: "org.h2.Driver"
 #  jpa:
 #    hibernate:
-#      ddl-auto: "create-drop"
+#      ddl-auto: "update"
 
 
 #spring:
@@ -84,16 +84,12 @@ serverInfo:
 #    password: password
 #  jpa:
 #    hibernate:
-#      ddl-auto: validate
+#      ddl-auto: update
 #
 #flyway:
 #  enabled: true
 
 arkNetworkConfigPath: "ark_network_config/testnet.yml"
-
-serviceArkAccount:
-  address: AewU1vEmPrtQNjdVo33cX84bfovY3jNAkV
-  passphrase: change-me
 
 fees:
   btcFlatFee: 0
@@ -101,8 +97,17 @@ fees:
 
 server:
   port: 9190
-  
+
+serviceArkAccount:
+  address: AewU1vEmPrtQNjdVo33cX84bfovY3jNAkV
+  passphrase: change-me
+
+bitcoinRpc:
+  url: "http://localhost:18332/"
+  username: "bitcoinrpc"
+  password: "change_this_to_a_long_random_password"
+
 bitcoinListener:
   url: http://localhost:9090
 
-bitcoinEventCallbackUrl: http://localhost:9190/
+bitcoinEventCallbackUrl: http://localhost:9190/bitcoinEvents

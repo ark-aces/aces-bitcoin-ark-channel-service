@@ -78,10 +78,12 @@ curl http://localhost:9190/
 Create a new Service Contract:
 
 ```
-curl -X POST localhost:9190/contracts \
+curl -X POST http://localhost:9190/contracts \
 -H 'Content-type: application/json' \
 -d '{
-  "recipientArkAddress": "ARNJJruY6RcuYCXcwWsu4bx9kyZtntqeAx"
+  "arguments": {
+    "recipientArkAddress": "ARNJJruY6RcuYCXcwWsu4bx9kyZtntqeAx"
+  }
 }' 
 ```
 
@@ -94,7 +96,7 @@ curl -X POST localhost:9190/contracts \
   "results": {
   
     "recipientArkAddress": "ARNJJruY6RcuYCXcwWsu4bx9kyZtntqeAx",
-    "depositBtcAddress": "5b83337a5af30bba26a55830a7d0ccf69114137ff699a3d718699ba1f498d77b",
+    "depositBtcAddress": "mu7gjSBLssPhKYuYU4qqBGFzjbh7ZTA6uY",
     "transfers": []
 }
 ```
@@ -114,17 +116,18 @@ curl -X GET http://localhost:9190/contracts/{id}
   "results": {
     "recipientArkAddress": "ARNJJruY6RcuYCXcwWsu4bx9kyZtntqeAx",
     "depositBtcAddress": "5b83337a5af30bba26a55830a7d0ccf69114137ff699a3d718699ba1f498d77b",
-    "transfers": [
-      "id": "fa046b0e-7b05-4a2d-a4c9-168951df3b90",
-      "createdAt": "2017-07-05T21:00:38.457Z",
-      "btcTransactionId": "",
-      "btcAmount": "1.00000",
-      "btcToArkRate": "2027.58000",
-      "btcFlatFee": "0.00000",
-      "btcPercentFee": "1.00000",
-      "btcTotalFee": "0.01000",
-      "arkSendAmount": "2007.30420",
-      "arkTransactionId": "49f55381c5c3c70f96e848df53ab7f9ae9881dbb8eb43e8f91f642018bf1258f"
-    ]
+    "transfers" : [ {
+      "id" : "uDui0F8PIjldKyGm0rdd",
+      "status" : "new",
+      "createdAt" : "2018-01-21T20:24:52.057Z",
+      "btcTransactionId" : "78b6c99c40451d7e46f2eb41cdb831d087fecd759b01e00fd69e34959b5bee25",
+      "btcAmount" : "0.00100000",
+      "btcToArkRate" : "1985.31000000",
+      "btcFlatFee" : "0.00000000",
+      "btcPercentFee" : "1.00000000",
+      "btcTotalFee" : "0.00001000",
+      "arkSendAmount" : "1.96545690"
+    } ]
+  }
 }
 ```

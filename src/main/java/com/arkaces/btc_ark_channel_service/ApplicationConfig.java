@@ -5,13 +5,16 @@ import com.arkaces.ApiClient;
 import com.arkaces.aces_listener_api.AcesListenerApi;
 import com.arkaces.aces_server.aces_service.config.AcesServiceConfig;
 import com.arkaces.aces_server.ark_auth.ArkAuthConfig;
+import com.arkaces.btc_ark_channel_service.bitcoin_rpc.BitcoinRpcSettings;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @EnableScheduling
@@ -40,6 +43,14 @@ public class ApplicationConfig {
         }
 
         return new AcesListenerApi(apiClient);
+    }
+
+    @Bean
+    public RestTemplate bitcoinRpcRestTemplate(BitcoinRpcSettings bitcoinRpcSettings) {
+        return new RestTemplateBuilder()
+                .rootUri(bitcoinRpcSettings.getUrl())
+                .basicAuthorization(bitcoinRpcSettings.getUsername(), bitcoinRpcSettings.getPassword())
+                .build();
     }
 
     @Bean

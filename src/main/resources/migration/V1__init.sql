@@ -17,6 +17,10 @@ CREATE TABLE transfers (
   btc_percent_fee DECIMAL(8,5),
   btc_total_fee DECIMAL(8,5),
   ark_send_amount DECIMAL(8,5),
-  ark_transaction_id VARCHAR(255)
+  ark_transaction_id VARCHAR(255),
+  needs_ark_confirmation BOOLEAN,
+  ark_confirmation_subscription_id VARCHAR(255),
+  needs_btc_return BOOLEAN,
+  return_btc_transaction_id VARHCHAR(255)
 );
 ALTER TABLE transfers ADD CONSTRAINT FOREIGN KEY (contract_pid) REFERENCES contracts (pid);

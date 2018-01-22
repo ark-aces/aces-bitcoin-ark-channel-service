@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.wallet.Wallet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -91,6 +93,27 @@ public class BitcoinService {
         String body = objectMapper.writeValueAsString(bitcoinRpcRequest);
 
         return new HttpEntity<>(body, headers);
+    }
+
+    /**
+     * @param recipientAddress
+     * @param amount amount in btc
+     * @return transaction id
+     */
+    private String sendValue(String recipientAddress, BigDecimal amount) {
+        HttpEntity<String> blockHashRequestEntity = getRequestEntity("sendtoaddress", Arrays.asList(
+            recipientAddress,
+            amount.toPlainString()
+        ));
+        return bitcoinRpcRestTemplate
+            .exchange(
+                "/",
+                HttpMethod.POST,
+                blockHashRequestEntity,
+                new ParameterizedTypeReference<BitcoinRpcResponse<String>>() {}
+            )
+            .getBody()
+            .getResult();
     }
 
 }
