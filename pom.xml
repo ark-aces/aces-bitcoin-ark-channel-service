@@ -4,12 +4,12 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.arkaces</groupId>
-	<artifactId>btc_ark_channel_service</artifactId>
+	<artifactId>bitcoin_ark_channel_service</artifactId>
 	<version>1.0.0</version>
 	<packaging>jar</packaging>
 
-	<name>ark_btc_channel_service</name>
-	<description>ACES ARK-BTC Channel Service</description>
+	<name>bitcoin_ark_channel_service</name>
+	<description>ACES BTC-ARK Channel Service</description>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
