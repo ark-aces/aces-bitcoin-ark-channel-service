@@ -5,4 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Transactional
 public interface TransferRepository extends PagingAndSortingRepository<TransferEntity, Long> {
+
+    TransferEntity findOneByBtcTransactionId(String btcTransactionId);
+
 }

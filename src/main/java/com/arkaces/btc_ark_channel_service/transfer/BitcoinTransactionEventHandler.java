@@ -15,6 +15,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.retry.RetryCallback;
+import org.springframework.retry.RetryContext;
+import org.springframework.retry.policy.SimpleRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.util.Collections;
 
 @RestController
 @Slf4j
@@ -51,21 +56,27 @@ public class BitcoinTransactionEventHandler {
             // todo: lock contract for update to prevent concurrent processing of a listener transaction.
             // Listeners send events serially, so that shouldn't be an issue, but we might want to lock
             // to be safe.
-
-            if (! contractEntity.getStatus().equals(ContractStatus.NEW)) {
-                log.info("Contract " + contractEntity.getId() + " already processed");
-                return ResponseEntity.ok().build();
-            }
-
             log.info("Matched event for contract id " + contractEntity.getId() + " btc transaction id " + btcTransactionId);
 
-            String transferId = identifierGenerator.generate();
+            TransferEntity transferEntity;
+            TransferEntity existingTransferEntity = transferRepository.findOneByBtcTransactionId(btcTransactionId);
+            if (existingTransferEntity != null) {
+                transferEntity = existingTransferEntity;
+            } else {
+                String transferId = identifierGenerator.generate();
 
-            TransferEntity transferEntity = new TransferEntity();
-            transferEntity.setId(transferId);
-            transferEntity.setCreatedAt(LocalDateTime.now());
-            transferEntity.setBtcTransactionId(btcTransactionId);
-            transferEntity.setContractEntity(contractEntity);
+                transferEntity = new TransferEntity();
+                transferEntity.setId(transferId);
+                transferEntity.setStatus(TransferStatus.NEW);
+                transferEntity.setCreatedAt(LocalDateTime.now());
+                transferEntity.setBtcTransactionId(btcTransactionId);
+                transferEntity.setContractEntity(contractEntity);
+            }
+
+            if (! transferEntity.getStatus().equals(TransferStatus.NEW)) {
+                log.info("Transfer id " + transferEntity.getId() + " already processed");
+                return ResponseEntity.ok().build();
+            }
 
             // Get BTC amount from transaction
             BitcoinTransaction bitcoinTransaction = eventPayload.getData();
@@ -100,14 +111,22 @@ public class BitcoinTransactionEventHandler {
             }
             transferEntity.setArkSendAmount(arkSendAmount);
 
-            transferEntity.setStatus(TransferStatus.NEW);
             transferRepository.save(transferEntity);
 
             // Check that service has enough ark to send
-            BigDecimal serviceAvailableArk = arkSatoshiService.toArk(Long.parseLong(
-                    arkClient.getBalance(serviceArkAccountSettings.getAddress())
-                        .getBalance()
-            ));
+            SimpleRetryPolicy policy = new SimpleRetryPolicy(5, Collections.singletonMap(Exception.class, true));
+            RetryTemplate template = new RetryTemplate();
+            template.setRetryPolicy(policy);
+            BigDecimal serviceAvailableArk;
+            try {
+                serviceAvailableArk = template.execute((RetryCallback<BigDecimal, Exception>) context ->
+                    arkSatoshiService.toArk(Long.parseLong(
+                        arkClient.getBalance(serviceArkAccountSettings.getAddress())
+                            .getBalance()))
+                );
+            } catch (Exception e) {
+                throw new RuntimeException("Failed to parse value", e);
+            }
 
             // Send ark transaction
             if (arkSendAmount.compareTo(BigDecimal.ZERO) > 0) {
@@ -117,7 +136,8 @@ public class BitcoinTransactionEventHandler {
                             contractEntity.getRecipientArkAddress(),
                             arkSendSatoshis,
                             null,
-                            serviceArkAccountSettings.getPassphrase()
+                            serviceArkAccountSettings.getPassphrase(),
+                            10
                     );
                     transferEntity.setArkTransactionId(arkTransactionId);
 
@@ -127,6 +147,7 @@ public class BitcoinTransactionEventHandler {
                     // todo: asynchronously confirm transaction, if transaction fails to confirm we should return btc amount
                     transferEntity.setNeedsArkConfirmation(true);
                 } else {
+                    log.info("Insufficient ark to send transfer id = " + transferEntity.getId());
                     // Insufficient service ark to send, we need to return the btc
                     transferEntity.setStatus(TransferStatus.FAILED);
 
