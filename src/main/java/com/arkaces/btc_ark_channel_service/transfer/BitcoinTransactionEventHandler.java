@@ -154,6 +154,8 @@ public class BitcoinTransactionEventHandler {
                     // todo: we should automatically send return btc transaction in an async worker
                     transferEntity.setNeedsBtcReturn(true);
                 }
+            } else {
+                transferEntity.setStatus(TransferStatus.COMPLETE);
             }
 
             transferEntity.setStatus(TransferStatus.COMPLETE);
