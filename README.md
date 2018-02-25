@@ -1,5 +1,13 @@
-# aces-service-btc-ark-channel
+# ACES Service BTC-ARK Channel Service
+
 ACES BTC to ARK transfer channel service
+
+
+## Run
+
+```
+mvn spring-boot:run
+```
 
 
 ## Using Service
