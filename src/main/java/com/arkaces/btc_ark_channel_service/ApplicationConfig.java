@@ -11,7 +11,10 @@ import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.event.ApplicationEventMulticaster;
+import org.springframework.context.event.SimpleApplicationEventMulticaster;
 import org.springframework.core.env.Environment;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
@@ -57,5 +60,17 @@ public class ApplicationConfig {
     public String bitcoinEventCallbackUrl(Environment environment) {
         return environment.getProperty("bitcoinEventCallbackUrl");
     }
+    
+    @Bean
+    public Integer bitcoinListenerMinConfirmations(Environment environment) {
+        return environment.getProperty("bitcoinListener.minConfirmations", Integer.class);
+    }
 
+    @Bean(name = "applicationEventMulticaster")
+    public ApplicationEventMulticaster simpleApplicationEventMulticaster() {
+        SimpleApplicationEventMulticaster eventMulticaster = new SimpleApplicationEventMulticaster();
+        eventMulticaster.setTaskExecutor(new SimpleAsyncTaskExecutor());
+        
+        return eventMulticaster;
+    }
 }

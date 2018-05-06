@@ -1,12 +1,9 @@
 package com.arkaces.btc_ark_channel_service.bitcoin_rpc;
 
 import com.arkaces.aces_server.common.json.NiceObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.ECKey;
-import org.bitcoinj.wallet.Wallet;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -33,18 +30,21 @@ public class BitcoinService {
     private final NiceObjectMapper objectMapper = new NiceObjectMapper(new ObjectMapper());
 
     public String sendTransaction(String recipientAddress, BigDecimal amount) {
-        HttpEntity<String> blockHashRequestEntity = getRequestEntity("sendtoaddress", new ArrayList<>());
+        HttpEntity<String> blockHashRequestEntity = getRequestEntity("sendtoaddress", Arrays.asList(
+            recipientAddress,
+            amount.toPlainString()
+        ));
         return bitcoinRpcRestTemplate
-                .exchange(
-                        "/",
-                        HttpMethod.POST,
-                        blockHashRequestEntity,
-                        new ParameterizedTypeReference<BitcoinRpcResponse<String>>() {}
-                )
-                .getBody()
-                .getResult();
+            .exchange(
+                    "/",
+                    HttpMethod.POST,
+                    blockHashRequestEntity,
+                    new ParameterizedTypeReference<BitcoinRpcResponse<String>>() {}
+            )
+            .getBody()
+            .getResult();
     }
-
+    
     public String getNewAddress() {
         HttpEntity<String> blockHashRequestEntity = getRequestEntity("getnewaddress", new ArrayList<>());
         return bitcoinRpcRestTemplate
@@ -58,33 +58,6 @@ public class BitcoinService {
             .getResult();
     }
 
-    public String getPrivateKey(String address) {
-        HttpEntity<String> blockHashRequestEntity = getRequestEntity("dumpprivkey", Arrays.asList(address));
-        return bitcoinRpcRestTemplate
-            .exchange(
-                "/",
-                HttpMethod.POST,
-                blockHashRequestEntity,
-                new ParameterizedTypeReference<BitcoinRpcResponse<String>>() {}
-            )
-            .getBody()
-            .getResult();
-    }
-
-    public JsonNode getTransaction(String transactionId) {
-        HttpEntity<String> blockHashRequestEntity = getRequestEntity("gettransaction", Arrays.asList(transactionId));
-        return bitcoinRpcRestTemplate
-            .exchange(
-                "/",
-                HttpMethod.POST,
-                blockHashRequestEntity,
-                new ParameterizedTypeReference<BitcoinRpcResponse<JsonNode>>() {}
-            )
-            .getBody()
-            .getResult();
-    }
-
-
     private HttpEntity<String> getRequestEntity(String method, List<Object> params) {
         MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
         headers.add("Content-Type", "text/plain");
@@ -93,27 +66,6 @@ public class BitcoinService {
         String body = objectMapper.writeValueAsString(bitcoinRpcRequest);
 
         return new HttpEntity<>(body, headers);
-    }
-
-    /**
-     * @param recipientAddress
-     * @param amount amount in btc
-     * @return transaction id
-     */
-    private String sendValue(String recipientAddress, BigDecimal amount) {
-        HttpEntity<String> blockHashRequestEntity = getRequestEntity("sendtoaddress", Arrays.asList(
-            recipientAddress,
-            amount.toPlainString()
-        ));
-        return bitcoinRpcRestTemplate
-            .exchange(
-                "/",
-                HttpMethod.POST,
-                blockHashRequestEntity,
-                new ParameterizedTypeReference<BitcoinRpcResponse<String>>() {}
-            )
-            .getBody()
-            .getResult();
     }
 
 }

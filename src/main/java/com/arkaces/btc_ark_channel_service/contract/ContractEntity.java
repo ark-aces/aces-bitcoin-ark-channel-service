@@ -21,13 +21,10 @@ public class ContractEntity {
     private String correlationId;
     private String status;
     private LocalDateTime createdAt;
-    private LocalDateTime expiresAt;
     private String recipientArkAddress;
+    private String returnBtcAddress;
     private String depositBtcAddress;
     private String subscriptionId;
-    
-    // todo store password encrypted in db
-    private String depositBtcPassphrase;
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "contractEntity")
     private List<TransferEntity> transferEntities = new ArrayList<>();

@@ -50,5 +50,6 @@ public class TransferEntity {
     private String returnBtcTransactionId;
 
     @ManyToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "contract_pid")
     private ContractEntity contractEntity;
 }

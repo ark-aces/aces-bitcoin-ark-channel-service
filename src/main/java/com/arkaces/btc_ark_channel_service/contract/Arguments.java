@@ -5,4 +5,5 @@ import lombok.Data;
 @Data
 public class Arguments {
     private String recipientArkAddress;
+    private String returnBtcAddress;
 }
