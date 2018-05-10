@@ -4,22 +4,26 @@ serverInfo:
   instructions: >
     After this contract is executed, any BTC sent to depositBtcAddress will be exchanged for ARK and 
     sent directly to the given recipientArkAddress less service fees.
-  version: "1.0.0"
+  version: "1.1.0"
   websiteUrl: "https://arkaces.com"
-  flatFee: "0"
-  percentFee: "1.00%"
-  capacities:
-    -
-      value: "5000.00"
-      unit: "ARK"
-      displayValue: "5000 ARK"
+#  capacities:
+#    -
+#      value: "5000.00"
+#      unit: "ARK"
   inputSchema: >
     {
       "type": "object",
       "properties": {
         "recipientArkAddress": {
-          "type": "string"
-        }
+          "type": "string",
+          "title": "Recipient ARK Address",
+          "description": "Enter recipient ARK address to transfer funds to."
+        },
+         "returnBtcAddress": {
+            "type": "string",
+            "title": "Return BTC Address",
+            "description": "Enter return BTC address to send returns to."
+          }
       },
       "required": [
         "recipientArkAddress"
@@ -67,27 +71,17 @@ serverInfo:
       }
     }
 
-#spring:
-#  datasource:
-#    url: "jdbc:h2:/tmp/btc_ark_channel_service.db;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE"
-#    driver-class-name: "org.h2.Driver"
-#  jpa:
-#    hibernate:
-#      ddl-auto: "update"
+spring:
+  datasource:
+    platform: "postgres"
+    url: "jdbc:postgresql://localhost:5432/aces_btc_ark_channel_service_db"
+    username: "postgres"
+    password: "password"
+  jpa:
+    hibernate:
+      ddl-auto: "validate"
 
-
-#spring:
-#  datasource:
-#    platform: postgres
-#    url: jdbc:postgresql://localhost:5432/aces_btc_ark_channel_db
-#    username: service_user
-#    password: password
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#
-#flyway:
-#  enabled: true
+security.ignored: "/**"
 
 arkNetworkConfigPath: "ark_network_config/testnet.yml"
 
@@ -99,7 +93,7 @@ server:
   port: 9190
 
 serviceArkAccount:
-  address: AewU1vEmPrtQNjdVo33cX84bfovY3jNAkV
+  address: change-me
   passphrase: change-me
 
 bitcoinRpc:
@@ -109,5 +103,6 @@ bitcoinRpc:
 
 bitcoinListener:
   url: http://localhost:9090
+  minConfirmations: 1
 
 bitcoinEventCallbackUrl: http://localhost:9190/bitcoinEvents

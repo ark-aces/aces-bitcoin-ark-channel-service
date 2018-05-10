@@ -24,6 +24,7 @@ public class ContractMapper {
         
         Results results = new Results();
         results.setDepositBtcAddress(contractEntity.getDepositBtcAddress());
+        results.setReturnBtcAddress(contractEntity.getReturnBtcAddress());
         results.setRecipientArkAddress(contractEntity.getRecipientArkAddress());
         results.setTransfers(
             contractEntity.getTransferEntities().stream()

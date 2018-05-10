@@ -31,24 +31,28 @@ public class ContractController {
     private final AcesListenerApi bitcoinListener;
     private final String bitcoinEventCallbackUrl;
     private final BitcoinService bitcoinService;
+    private final Integer minConfirmations;
+    private final CreateContractRequestValidator contractRequestValidator;
     
     @PostMapping("/contracts")
     public Contract<Results> postContract(@RequestBody CreateContractRequest<Arguments> createContractRequest) {
+        contractRequestValidator.validate(createContractRequest);
+        
         ContractEntity contractEntity = new ContractEntity();
         contractEntity.setCorrelationId(createContractRequest.getCorrelationId());
+        contractEntity.setReturnBtcAddress(createContractRequest.getArguments().getReturnBtcAddress());
         contractEntity.setRecipientArkAddress(createContractRequest.getArguments().getRecipientArkAddress());
         contractEntity.setCreatedAt(LocalDateTime.now());
         contractEntity.setId(identifierGenerator.generate());
-        contractEntity.setStatus(ContractStatus.EXECUTED);
-        
-        // generate bitcoin wallet for deposits
+        contractEntity.setStatus(ContractStatus.NEW);
+
         String depositBtcAddress = bitcoinService.getNewAddress();
         contractEntity.setDepositBtcAddress(depositBtcAddress);
 
         // subscribe to bitcoin listener on deposit bitcoin address
         SubscriptionRequest subscriptionRequest = new SubscriptionRequest();
         subscriptionRequest.setCallbackUrl(bitcoinEventCallbackUrl);
-        subscriptionRequest.setMinConfirmations(0);
+        subscriptionRequest.setMinConfirmations(minConfirmations);
         subscriptionRequest.setRecipientAddress(depositBtcAddress);
         Subscription subscription;
         try {
