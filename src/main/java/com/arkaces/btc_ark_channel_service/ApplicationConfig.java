@@ -4,7 +4,6 @@ import ark_java_client.*;
 import com.arkaces.ApiClient;
 import com.arkaces.aces_listener_api.AcesListenerApi;
 import com.arkaces.aces_server.aces_service.config.AcesServiceConfig;
-import com.arkaces.aces_server.ark_auth.ArkAuthConfig;
 import com.arkaces.btc_ark_channel_service.bitcoin_rpc.BitcoinRpcSettings;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -21,7 +20,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Configuration
 @EnableScheduling
-@Import({AcesServiceConfig.class, ArkAuthConfig.class})
+@Import({AcesServiceConfig.class})
 @EnableJpaRepositories
 @EntityScan
 public class ApplicationConfig {

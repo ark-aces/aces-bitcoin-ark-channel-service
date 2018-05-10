@@ -27,7 +27,7 @@ public class ServiceCapacityService {
         LocalDateTime now = LocalDateTime.now();
         
         // Lock service capacity row and lock so that no other threads can change capacity while updating
-        ServiceCapacityEntity serviceCapacityEntity = serviceCapacityRepository.findOneForUpdate(1);
+        ServiceCapacityEntity serviceCapacityEntity = serviceCapacityRepository.findOneForUpdate(1L);
 
         // Get ark balance, this tries up to 5 times in case nodes are not responding
         SimpleRetryPolicy policy = new SimpleRetryPolicy(5, Collections.singletonMap(Exception.class, true));
@@ -68,11 +68,11 @@ public class ServiceCapacityService {
     }
     
     public ServiceCapacityEntity getLockedCapacityEntity() {
-        return serviceCapacityRepository.findOneForUpdate(1);
+        return serviceCapacityRepository.findOneForUpdate(1L);
     }
     
     public BigDecimal getAvailableAmount() {
-        ServiceCapacityEntity serviceCapacityEntity = serviceCapacityRepository.findOne(1);
+        ServiceCapacityEntity serviceCapacityEntity = serviceCapacityRepository.findOne(1L);
         if (serviceCapacityEntity != null) {
             return serviceCapacityEntity.getAvailableAmount();
         } else {

@@ -40,6 +40,7 @@ public class ContractController {
         
         ContractEntity contractEntity = new ContractEntity();
         contractEntity.setCorrelationId(createContractRequest.getCorrelationId());
+        contractEntity.setReturnBtcAddress(createContractRequest.getArguments().getReturnBtcAddress());
         contractEntity.setRecipientArkAddress(createContractRequest.getArguments().getRecipientArkAddress());
         contractEntity.setCreatedAt(LocalDateTime.now());
         contractEntity.setId(identifierGenerator.generate());

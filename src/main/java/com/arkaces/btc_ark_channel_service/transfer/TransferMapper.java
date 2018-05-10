@@ -20,6 +20,7 @@ public class TransferMapper {
         transfer.setBtcToArkRate(transferEntity.getBtcToArkRate().toPlainString());
         transfer.setBtcTotalFee(transferEntity.getBtcTotalFee().toPlainString());
         transfer.setCreatedAt(transferEntity.getCreatedAt().atOffset(ZoneOffset.UTC).toString());
+        transfer.setReturnBtcTransactionId(transferEntity.getReturnBtcTransactionId());
         
         return transfer;
     }

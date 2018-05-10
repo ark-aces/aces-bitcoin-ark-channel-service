@@ -7,10 +7,10 @@ import org.springframework.data.repository.query.Param;
 
 import javax.persistence.LockModeType;
 
-public interface ServiceCapacityRepository extends JpaRepository<ServiceCapacityEntity, Integer> {
+public interface ServiceCapacityRepository extends JpaRepository<ServiceCapacityEntity, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select distinct s from ServiceCapacityEntity s where s.pid = :pid")
-    ServiceCapacityEntity findOneForUpdate(@Param("pid") Integer pid);
+    @Query("select s from ServiceCapacityEntity s where s.pid = :pid")
+    ServiceCapacityEntity findOneForUpdate(@Param("pid") Long pid);
     
 }

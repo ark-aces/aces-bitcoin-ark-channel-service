@@ -2,6 +2,16 @@
 
 ACES BTC to ARK transfer channel service
 
+## Set up local database
+
+```
+docker run -d -p 5432:5432 \
+--name aces_btc_ark_channel_service_db \
+-e POSTGRES_PASSWORD=password \
+-e POSTGRES_USER=postgres \
+-e POSTGRES_DB=aces_btc_ark_channel_service_db \
+postgres:9.6.1
+```
 
 ## Run
 

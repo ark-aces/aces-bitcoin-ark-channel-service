@@ -71,26 +71,17 @@ serverInfo:
       }
     }
 
-#spring:
-#  datasource:
-#    url: "jdbc:h2:/tmp/btc_ark_channel_service.db;DB_CLOSE_ON_EXIT=FALSE;AUTO_RECONNECT=TRUE"
-#    driver-class-name: "org.h2.Driver"
-#  jpa:
-#    hibernate:
-#      ddl-auto: "update"
+spring:
+  datasource:
+    platform: "postgres"
+    url: "jdbc:postgresql://localhost:5432/aces_btc_ark_channel_service_db"
+    username: "postgres"
+    password: "password"
+  jpa:
+    hibernate:
+      ddl-auto: "validate"
 
-
-#spring:
-#  datasource:
-#    platform: postgres
-#    url: jdbc:postgresql://localhost:5432/aces_btc_ark_channel_db
-#    username: service_user
-#    password: password
-#  jpa:
-#    hibernate:
-#      ddl-auto: update
-#flyway:
-#  enabled: true
+security.ignored: "/**"
 
 arkNetworkConfigPath: "ark_network_config/testnet.yml"
 

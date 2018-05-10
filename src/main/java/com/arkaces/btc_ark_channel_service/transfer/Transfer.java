@@ -15,4 +15,5 @@ public class Transfer {
     private String btcTotalFee;
     private String arkSendAmount;
     private String arkTransactionId;
+    private String returnBtcTransactionId;
 }

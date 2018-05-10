@@ -14,6 +14,6 @@ public interface TransferRepository extends PagingAndSortingRepository<TransferE
     TransferEntity findOneByBtcTransactionId(String btcTransactionId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select distinct t from TransferEntity t where t.pid = :pid")
+    @Query("select t from TransferEntity t where t.pid = :pid")
     TransferEntity findOneForUpdate(@Param("pid") Long pid);
 }

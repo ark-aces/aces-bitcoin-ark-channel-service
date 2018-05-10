@@ -92,11 +92,15 @@ public class TransferService {
         log.info("Insufficient ark to send transfer id = " + transferEntity.getId());
 
         String returnBtcAddress = transferEntity.getContractEntity().getReturnBtcAddress();
-        String returnBtcTransactionId = bitcoinService.sendTransaction(returnBtcAddress, transferEntity.getBtcAmount());
+        if (returnBtcAddress != null) {
+            String returnBtcTransactionId = bitcoinService.sendTransaction(returnBtcAddress, transferEntity.getBtcAmount());
+            transferEntity.setStatus(TransferStatus.RETURNED);
+            transferEntity.setReturnBtcTransactionId(returnBtcTransactionId);
+        } else {
+            log.warn("Bitcoin return could not be processed for transfer " + transferPid);
+            transferEntity.setStatus(TransferStatus.FAILED);
+        }
 
-        transferEntity.setStatus(TransferStatus.RETURNED);
-        transferEntity.setReturnBtcTransactionId(returnBtcTransactionId);
-        
         transferRepository.save(transferEntity);
     }
     

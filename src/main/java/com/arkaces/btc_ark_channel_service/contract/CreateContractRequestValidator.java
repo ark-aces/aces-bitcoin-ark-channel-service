@@ -6,9 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Base58;
-import org.bitcoinj.params.MainNetParams;
 import org.bouncycastle.util.encoders.DecoderException;
-import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -35,20 +33,20 @@ public class CreateContractRequestValidator {
         
         String recipientArkAddress = createContractRequest.getArguments().getRecipientArkAddress();
         if (StringUtils.isEmpty(recipientArkAddress)) {
-            bindingResult.rejectValue("recipientArkAddress", FieldErrorCodes.REQUIRED, "Recipient ARK address required.");
+            bindingResult.rejectValue("arguments.recipientArkAddress", FieldErrorCodes.REQUIRED, "Recipient ARK address required.");
         } else {
             try {
                 Base58.decodeChecked(recipientArkAddress);
             } catch (AddressFormatException exception) {
                 if (exception.getMessage().equals("Checksum does not validate")) {
                     bindingResult.rejectValue(
-                        "recipientArkAddress",
+                        "arguments.recipientArkAddress",
                         FieldErrorCodes.INVALID_ARK_ADDRESS_CHECKSUM,
                         "Invalid ARK address checksum."
                     );
                 } else {
                     bindingResult.rejectValue(
-                        "recipientArkAddress",
+                        "arguments.recipientArkAddress",
                         FieldErrorCodes.INVALID_ARK_ADDRESS,
                         "Invalid ARK address."
                     );
@@ -59,16 +57,16 @@ public class CreateContractRequestValidator {
         String returnBtcAddress = createContractRequest.getArguments().getReturnBtcAddress();
         if (! StringUtils.isEmpty(returnBtcAddress)) {
             try {
-                new Address(MainNetParams.get(), Hex.decode(returnBtcAddress));
+                new Address(null, returnBtcAddress);
             } catch (AddressFormatException e) {
                 bindingResult.rejectValue(
-                    "returnBtcAddress",
+                    "arguments.returnBtcAddress",
                     FieldErrorCodes.INVALID_BTC_ADDRESS_CHECKSUM,
                     "Invalid BTC address checksum."
                 );
             } catch (DecoderException e) {
                 bindingResult.rejectValue(
-                    "returnBtcAddress",
+                    "arguments.returnBtcAddress",
                     FieldErrorCodes.INVALID_BTC_ADDRESS,
                     "Invalid BTC address."
                 );
