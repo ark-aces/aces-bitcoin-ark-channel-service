@@ -1,6 +1,8 @@
 package com.arkaces.btc_ark_channel_service.service_info;
 
 import com.arkaces.aces_server.aces_service.server_info.Capacity;
+import com.arkaces.aces_server.aces_service.server_info.MoneyAmount;
+import com.arkaces.btc_ark_channel_service.FeeSettings;
 import com.arkaces.btc_ark_channel_service.service_capacity.ServiceCapacityService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -19,6 +21,7 @@ public class ServerInfoController {
     private final ServerInfoSettings serverInfoSettings;    
     private final ObjectMapper objectMapper;
     private final ServiceCapacityService serviceCapacityService;
+    private final FeeSettings feeSettings;
     
     @GetMapping("/")
     public ServerInfo getServerInfo() {
@@ -36,6 +39,10 @@ public class ServerInfoController {
             throw new RuntimeException("Failed to parse outputSchema json", e);
         }
 
+        MoneyAmount flatFee = new MoneyAmount();
+        flatFee.setAmount(feeSettings.getBtcFlatFee());
+        flatFee.setUnit("BTC");
+        
         ServerInfo serverInfo = new ServerInfo();
         serverInfo.setName(serverInfoSettings.getName());
         serverInfo.setDescription(serverInfoSettings.getDescription());
@@ -43,8 +50,8 @@ public class ServerInfoController {
         serverInfo.setVersion(serverInfoSettings.getVersion());
         serverInfo.setWebsiteUrl(serverInfoSettings.getWebsiteUrl());
         serverInfo.setCapacities(serverInfoSettings.getCapacities());
-        serverInfo.setFlatFee(serverInfoSettings.getFlatFee());
-        serverInfo.setPercentFee(serverInfoSettings.getPercentFee());
+        serverInfo.setFlatFee(flatFee);
+        serverInfo.setPercentFee(feeSettings.getBtcPercentFee());
         serverInfo.setInputSchema(inputSchemaJsonNode);
         serverInfo.setOutputSchema(outputSchemaJsonNode);
         serverInfo.setInterfaces(serverInfoSettings.getInterfaces());
