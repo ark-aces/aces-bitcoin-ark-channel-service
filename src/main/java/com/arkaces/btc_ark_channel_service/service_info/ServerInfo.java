@@ -1,7 +1,6 @@
 package com.arkaces.btc_ark_channel_service.service_info;
 
 import com.arkaces.aces_server.aces_service.server_info.Capacity;
-import com.arkaces.aces_server.aces_service.server_info.MoneyAmount;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.Data;
 
@@ -16,7 +15,7 @@ public class ServerInfo {
     private String websiteUrl;
     private String instructions;
     private List<Capacity> capacities;
-    private MoneyAmount flatFee;
+    private BigDecimal flatFee;
     private BigDecimal percentFee;
     private JsonNode inputSchema;
     private JsonNode outputSchema;
