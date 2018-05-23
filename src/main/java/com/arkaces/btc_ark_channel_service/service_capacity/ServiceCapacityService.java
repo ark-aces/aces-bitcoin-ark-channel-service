@@ -56,7 +56,6 @@ public class ServiceCapacityService {
             BigDecimal availableAmount = accountBalance.subtract(serviceCapacityEntity.getUnsettledAmount());
             
             serviceCapacityEntity.setAvailableAmount(availableAmount);
-            serviceCapacityEntity.setUnsettledAmount(BigDecimal.ZERO);
             serviceCapacityEntity.setTotalAmount(accountBalance);
             serviceCapacityEntity.setUnit("ARK");
             serviceCapacityEntity.setUpdatedAt(now);
