@@ -84,7 +84,7 @@ serverInfo:
             "btcPercentFee": {
               "type": "string",
               "title": "Percentage Fee (BTC)",
-               "description": "Percentage fee per execution, charged in BTC"
+              "description": "Percentage fee per execution, charged in BTC"
             },
             "btcTotalFee": {
               "type": "string",
