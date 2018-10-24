@@ -4,6 +4,9 @@ import ark_java_client.*;
 import com.arkaces.ApiClient;
 import com.arkaces.aces_listener_api.AcesListenerApi;
 import com.arkaces.aces_server.aces_service.config.AcesServiceConfig;
+import com.arkaces.aces_server.aces_service.notification.NotificationService;
+import com.arkaces.aces_server.aces_service.notification.NotificationServiceFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import com.arkaces.btc_ark_channel_service.bitcoin_rpc.BitcoinRpcSettings;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.boot.web.client.RestTemplateBuilder;
@@ -15,8 +18,10 @@ import org.springframework.context.event.SimpleApplicationEventMulticaster;
 import org.springframework.core.env.Environment;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.mail.MailSender;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.web.client.RestTemplate;
+import java.math.BigDecimal;
 
 @Configuration
 @EnableScheduling
@@ -71,5 +76,27 @@ public class ApplicationConfig {
         eventMulticaster.setTaskExecutor(new SimpleAsyncTaskExecutor());
         
         return eventMulticaster;
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "notifications.enabled", havingValue = "true")
+    public NotificationService emailNotificationService(Environment environment, MailSender mailSender) {
+        return new NotificationServiceFactory().createEmailNotificationService(
+                environment.getProperty("serverInfo.name"),
+                environment.getProperty("notifications.fromEmailAddress"),
+                environment.getProperty("notifications.recipientEmailAddress"),
+                mailSender
+        );
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "notifications.enabled", havingValue = "false", matchIfMissing = true)
+    public NotificationService noOpNotificationService() {
+        return new NotificationServiceFactory().createNoOpNotificationService();
+    }
+
+    @Bean
+    public BigDecimal lowCapacityThreshold(Environment environment) {
+        return environment.getProperty("lowCapacityThreshold", BigDecimal.class);
     }
 }
