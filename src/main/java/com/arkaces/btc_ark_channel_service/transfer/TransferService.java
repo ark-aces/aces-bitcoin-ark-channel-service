@@ -100,7 +100,7 @@ public class TransferService {
      */
     public void processReturn(Long transferPid) {
         TransferEntity transferEntity = transferRepository.findOneForUpdate(transferPid);
-        String returnedMessage = ("Insufficient ark to send transfer id = " + transferEntity.getId());
+        String returnedMessage = "Insufficient ark to send transfer id = " + transferEntity.getId();
         log.info(returnedMessage);
 
         String returnBtcAddress = transferEntity.getContractEntity().getReturnBtcAddress();
@@ -114,7 +114,7 @@ public class TransferService {
             );
             transferEntity.setReturnBtcTransactionId(returnBtcTransactionId);
         } else {
-            String failedMessage = ("Bitcoin return could not be processed for transfer " + transferPid);
+            String failedMessage = "Bitcoin return could not be processed for transfer " + transferPid;
             log.warn(failedMessage);
             transferEntity.setStatus(TransferStatus.FAILED);
             notificationService.notifyFailedTransfer(
@@ -133,7 +133,7 @@ public class TransferService {
         notificationService.notifyFailedTransfer(
                 transferEntity.getContractEntity().getId(),
                 transferEntity.getId(),
-                ("Transfer failed.")
+                "Transfer failed."
         );
         transferRepository.save(transferEntity);
 
