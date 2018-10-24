@@ -1,5 +1,7 @@
 package com.arkaces.btc_ark_channel_service.transfer;
 
+import com.arkaces.aces_server.common.identifer.IdentifierGenerator;
+import com.arkaces.aces_server.aces_service.notification.NotificationService;
 import com.arkaces.btc_ark_channel_service.Constants;
 import com.arkaces.btc_ark_channel_service.ark.ArkService;
 import com.arkaces.btc_ark_channel_service.bitcoin_rpc.BitcoinService;
@@ -24,6 +26,8 @@ public class TransferService {
     private final TransferRepository transferRepository;
     private final ArkService arkService;
     private final BitcoinService bitcoinService;
+    private final BigDecimal lowCapacityThreshold;
+    private final NotificationService notificationService;
     private final ServiceCapacityService serviceCapacityService;
     private final ServiceCapacityRepository serviceCapacityRepository;
 
@@ -45,6 +49,10 @@ public class TransferService {
         serviceCapacityEntity.setAvailableAmount(newAvailableAmount);
         serviceCapacityEntity.setUnsettledAmount(newUnsettledAmount);
         serviceCapacityRepository.save(serviceCapacityEntity);
+
+        if (serviceCapacityEntity.getAvailableAmount().compareTo(lowCapacityThreshold) <= 0) {
+            notificationService.notifyLowCapacity(serviceCapacityEntity.getAvailableAmount(), serviceCapacityEntity.getUnit());
+        }
         
         return true;
     }
@@ -59,6 +67,7 @@ public class TransferService {
         serviceCapacityEntity.setTotalAmount(serviceCapacityEntity.getTotalAmount().subtract(totalAmount));
 
         serviceCapacityRepository.save(serviceCapacityEntity);
+
     }
     
     public void processNewTransfer(Long transferPid) {
@@ -78,8 +87,11 @@ public class TransferService {
         
         transferEntity.setStatus(TransferStatus.COMPLETE);
         transferRepository.save(transferEntity);
-
         log.info("Saved transfer id " + transferEntity.getId() + " to contract " + contractEntity.getId());
+        notificationService.notifySuccessfulTransfer(
+                transferEntity.getContractEntity().getId(),
+                transferEntity.getId()
+        );
     }
 
     /**
@@ -88,17 +100,28 @@ public class TransferService {
      */
     public void processReturn(Long transferPid) {
         TransferEntity transferEntity = transferRepository.findOneForUpdate(transferPid);
-
-        log.info("Insufficient ark to send transfer id = " + transferEntity.getId());
+        String returnedMessage = ("Insufficient ark to send transfer id = " + transferEntity.getId());
+        log.info(returnedMessage);
 
         String returnBtcAddress = transferEntity.getContractEntity().getReturnBtcAddress();
         if (returnBtcAddress != null) {
             String returnBtcTransactionId = bitcoinService.sendTransaction(returnBtcAddress, transferEntity.getBtcAmount());
             transferEntity.setStatus(TransferStatus.RETURNED);
+            notificationService.notifyFailedTransfer(
+                    transferEntity.getContractEntity().getId(),
+                    transferEntity.getId(),
+                    returnedMessage
+            );
             transferEntity.setReturnBtcTransactionId(returnBtcTransactionId);
         } else {
-            log.warn("Bitcoin return could not be processed for transfer " + transferPid);
+            String failedMessage = ("Bitcoin return could not be processed for transfer " + transferPid);
+            log.warn(failedMessage);
             transferEntity.setStatus(TransferStatus.FAILED);
+            notificationService.notifyFailedTransfer(
+                    transferEntity.getContractEntity().getId(),
+                    transferEntity.getId(),
+                    failedMessage
+            );
         }
 
         transferRepository.save(transferEntity);
@@ -107,6 +130,11 @@ public class TransferService {
     public void processFailedTransfer(Long transferPid) {
         TransferEntity transferEntity = transferRepository.findOneForUpdate(transferPid);
         transferEntity.setStatus(TransferStatus.FAILED);
+        notificationService.notifyFailedTransfer(
+                transferEntity.getContractEntity().getId(),
+                transferEntity.getId(),
+                ("Transfer failed.")
+        );
         transferRepository.save(transferEntity);
 
     }

@@ -5,7 +5,7 @@
 
 	<groupId>com.arkaces</groupId>
 	<artifactId>bitcoin_ark_channel_service</artifactId>
-	<version>1.1.0</version>
+	<version>1.2.0</version>
 	<packaging>jar</packaging>
 
 	<name>bitcoin_ark_channel_service</name>
@@ -45,6 +45,10 @@
 			<groupId>com.h2database</groupId>
 			<artifactId>h2</artifactId>
 			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>postgresql</groupId>
@@ -90,7 +94,7 @@
 		<dependency>
 			<groupId>com.arkaces</groupId>
 			<artifactId>aces_server_lib</artifactId>
-			<version>5.7.0</version>
+			<version>5.10.0</version>
 		</dependency>
 		<dependency>
 			<groupId>com.arkaces</groupId>

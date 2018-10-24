@@ -1,3 +1,6 @@
+server:
+  port: 9190
+
 serverInfo:
   name: "Aces BTC-ARK Channel Service"
   description: "ACES BTC to ARK Channel service for transferring BTC to ARK"
@@ -120,6 +123,15 @@ spring:
   jpa:
     hibernate:
       ddl-auto: "validate"
+#  mail:
+#    host: "change-me"
+#    port: 587
+#    username: "change-me"
+#    password: "change-me"
+#    properties:
+#      mail.smtp.auth: true
+#      mail.startttls.enable: true
+#
 
 security.ignored: "/**"
 
@@ -128,9 +140,6 @@ arkNetworkConfigPath: "ark_network_config/testnet.yml"
 fees:
   btcFlatFee: 0
   btcPercentFee: 1
-
-server:
-  port: 9190
 
 serviceArkAccount:
   address: change-me
@@ -146,3 +155,12 @@ bitcoinListener:
   minConfirmations: 1
 
 bitcoinEventCallbackUrl: http://localhost:9190/bitcoinEvents
+
+# Send notifications on low capacity and transfer completed/failed
+notifications:
+  enabled: false
+  recipientEmailAddress: "change_me"
+  fromEmailAddress: "change_me"
+
+# Capacity threshold at which low capacity notifications will be sent
+lowCapacityThreshold: "100.00"
